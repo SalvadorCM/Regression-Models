@@ -1,0 +1,96 @@
+---
+title: "Study of automatic and manual transmission vs miles per galon"
+author: "Salvador Castañeda"
+date: "18 de julio de 2017"
+output: pdf_document
+---
+
+## Introduction
+
+This study aims to determine wether a manual or automatic transmission gives a best miles per galon perfomrance. 
+The data set used for this assignment is `mtcars`. [here](https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/mtcars.html) you can find the full documentation.
+Its important to remark that this data was collected in 1974 and therefore it is not applicable to the present due to a almost sure structural change.
+
+## Summary
+In the study we found that manual transmittion has a significant better performance over automatic transmission.
+In fact, in average there is a 7.25 mpg increase in manual transmittion versus automatic though there are other important variables that impact the relationship.
+
+
+## Getting into the matter 
+We show the first rows of the dataset.
+
+```{r, echo=FALSE}
+library(ggplot2)
+data(mtcars)
+```
+
+
+```{r}
+head(mtcars)
+```
+
+
+For this study we´re going to ask the questions:
+
+        1.-Is an automatic or manual transmission better for MPG?
+        2.-Quantify the MPG difference between automatic and manual transmissions?
+
+So lets get into the matter
+
+Lets fit a model with am as a predictor of mpg.
+```{r}
+summary(lm(mpg~am,data = mtcars))
+```
+
+It is important to note that the intercept coefficient is the mean for automatic transmiissions and the am coefficient is the difference between manual and automatic transmission. Below we ilustrate this:
+```{r}
+by(mtcars$mpg,mtcars$am,mean)
+```
+For both values, the intercept and am coefficient are statistically significant (their p-values are < .005).
+So the model fitted would have this form: $mpg = 17.147+7.245*manual$ so if the transmittion is manual it has on average a 7.245 increase on the mpg.
+
+Now, the R-squared is 0.36 that suggests that mpg is not quite well estimated only by the am variable.
+The following plot is aimed to show that transmission is not the only important variable affecting miles per galon.
+Here we can see that as weight, horse power and number of cylinders increase, miles per galon decreases. 
+Thus, either we have automatic or manual transmissors, there are other variables that imapct the profit of mpg.
+
+```{r fig.width = 6, fig.height = 5,warning=FALSE}
+i <- ggplot(mtcars, aes(x=hp,y=wt,colour=mpg,size=factor(cyl)))+geom_point()
+i <- i+facet_grid(facet=.~factor(am))
+i
+```
+
+Now we´re going to use the `bestglm` package and figure out the best combination of variables to fit our model.
+
+```{r warning=FALSE}
+library(bestglm)
+mtcars <- mtcars[,c(2:11,1)]
+bestglm(mtcars, family= gaussian)
+summary(lm(mpg~wt+qsec+am,data=mtcars))
+```
+
+So now R-squared has grown to 85%.
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm(mpg~wt+qsec+am,data=mtcars))
+
+```
+
+##Finally, some exploratory analysis
+
+First we make the classic boxplot because it makes visual the advantage of manual transmittions vs automatic ones.
+
+```{r}
+
+plot(factor(mtcars$am),mtcars$mpg,names=c("Automatic","manual"))
+```
+
+And to conclude, a plot using all the variables the `bestglm` found were the best combination. 
+
+```{r}
+ggplot(mtcars, aes(x=qsec,y=mpg,colour=factor(am),size=wt))+geom_point()
+```
+
+
+
